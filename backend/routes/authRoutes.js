@@ -73,7 +73,7 @@ router.post('/signup', async (req, res) => {
         SendVerificationcode(email, verificationCode);
 
         // 9. Generate JWT token
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user._id, email: user.email, name: user.name }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         // 10. Send response
         res.status(201).json({
@@ -105,7 +105,7 @@ router.post('/login', async (req, res) => {
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
         // 4. Generate JWT token
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '60s' });
+        const token = jwt.sign({ id: user._id, email: user.email, name: user.name }, process.env.JWT_SECRET, { expiresIn: '60s' });
         console.log('Generated token:', token); // Debugging line
         // 5. Send response
         res.json({ token, userId: user._id });
@@ -151,7 +151,7 @@ router.post('/verify', async (req, res) => {
         await user.save();
 
         // 4. Generate new JWT token
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user._id, email: user.email, name: user.name }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         // 5. Send response with token
         return res.status(200).json({
@@ -199,7 +199,7 @@ router.get('/validate', async (req, res) => {
 });
 
 // =============================
-//      RESEND VERIFICATION
+//      RESEND VERIFICATION code
 // =============================
 router.post('/resend-verification', async (req, res) => {
     const { email } = req.body;

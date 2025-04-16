@@ -12,6 +12,7 @@ import IconInstagram from '../components/Icon/IconInstagram';
 import IconFacebookCircle from '../components/Icon/IconFacebookCircle';
 import IconTwitter from '../components/Icon/IconTwitter';
 import IconGoogle from '../components/Icon/IconGoogle';
+import { jwtDecode } from 'jwt-decode';
 
 const LoginBoxed = () => {
     const [emailError, setEmailError] = useState('');
