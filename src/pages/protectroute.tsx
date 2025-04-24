@@ -1,18 +1,34 @@
+import React, { useEffect, useState, ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { IRootState } from '../store';
-import { useSelector } from 'react-redux';
 
 interface ProtectedRouteProps {
-    children?: JSX.Element;
+    children: ReactNode;
+    allowedRoles?: string[];
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+// Helper function to decode JWT token payload without external library
+function decodeJwt(token: string): any {
+    try {
+        const payload = token.split('.')[1];
+        const decodedPayload = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+        return JSON.parse(decodedPayload);
+    } catch (e) {
+        console.error('Failed to decode token', e);
+        return null;
+    }
+}
+
+const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     const [isValid, setIsValid] = useState<boolean | null>(null);
     const token = localStorage.getItem('token');
 
     useEffect(() => {
         const validateToken = async () => {
+            if (!token) {
+                setIsValid(false);
+                return;
+            }
+
             try {
                 const response = await fetch('/api/auth/validate', {
                     method: 'GET',
@@ -20,50 +36,44 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
-                    credentials: 'include',
                 });
 
                 const data = await response.json();
 
                 if (response.ok && data.valid === true) {
-                    setIsValid(true);
+                    const decoded: any = decodeJwt(token);
+                    if (decoded === null) {
+                        setIsValid(false);
+                        return;
+                    }
+                    if (allowedRoles && allowedRoles.some((role) => role.toLowerCase() === decoded.role.toLowerCase())) {
+                        setIsValid(true);
+                    } else if (!allowedRoles) {
+                        setIsValid(true);
+                    } else {
+                        setIsValid(false);
+                    }
                 } else {
-                    throw new Error(data.message || 'Invalid token');
+                    setIsValid(false);
                 }
-            } catch (error) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('userId');
+            } catch (err) {
+                console.error('Validation error:', err);
                 setIsValid(false);
             }
         };
 
-        // Immediately validate if token exists
-        if (token) {
-            validateToken();
-        } else {
-            // No token - immediately invalid
-            setIsValid(false);
-        }
-    }, [token, window.location.pathname]); // Re-run when route changes
+        validateToken();
+    }, [token, allowedRoles]);
 
-    // Immediately redirect if no token exists
-    if (!token) {
-        return <Navigate to="/" replace />;
-    }
-
-    // Show loading state while validating
     if (isValid === null) {
         return <div>Loading...</div>;
     }
 
-    // Redirect if validation failed
     if (!isValid) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
-        return <Navigate to="/" replace />;
+        return <Navigate to="/unauthorized" replace />;
     }
 
-    return children;
+    return <>{children}</>;
 };
 
 export default ProtectedRoute;

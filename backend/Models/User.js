@@ -29,6 +29,11 @@ const userSchema = new mongoose.Schema(
         verificationCodeExpires: {
             type: Date,
         },
+        role: {
+            type: String,
+            enum: ['user', 'admin', 'backenduser'],
+            default: 'user',
+        },
         isAdmin: {
             type: Boolean,
             default: false,

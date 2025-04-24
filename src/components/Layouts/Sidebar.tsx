@@ -31,6 +31,15 @@ import IconMenuUsers from '../Icon/Menu/IconMenuUsers';
 import IconMenuPages from '../Icon/Menu/IconMenuPages';
 import IconMenuAuthentication from '../Icon/Menu/IconMenuAuthentication';
 import IconMenuDocumentation from '../Icon/Menu/IconMenuDocumentation';
+import Chat from '../../../chat';
+import Mailbox from '../../../Mailbox';
+import Todolist from '../../../Todolist';
+import Notes from '../../../Notes';
+import Scrumboard from '../../../Scrumboard';
+import Contacts from '../../../Contacts';
+import userlist from '../../../Userlist';
+import { getUserRole } from '../../utils/auth';
+import { getAllByRole } from '@testing-library/react';
 
 const Sidebar = () => {
     const [currentMenu, setCurrentMenu] = useState<string>('');
@@ -40,6 +49,7 @@ const Sidebar = () => {
     const location = useLocation();
     const dispatch = useDispatch();
     const { t } = useTranslation();
+    const role = getUserRole();
     const toggleMenu = (value: string) => {
         setCurrentMenu((oldValue) => {
             return oldValue === value ? '' : value;
@@ -132,52 +142,69 @@ const Sidebar = () => {
                             <li className="nav-item">
                                 <ul>
                                     <li className="nav-item">
-                                        <NavLink to="/apps/chat" className="group">
-                                            <div className="flex items-center">
-                                                <IconMenuChat className="group-hover:!text-primary shrink-0" />
-                                                <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('chat')}</span>
-                                            </div>
-                                        </NavLink>
+                                        {getUserRole() === 'admin' && (
+                                            <NavLink to="/Chat" className="group">
+                                                <div className="flex items-center">
+                                                    <IconMenuChat className="group-hover:!text-primary shrink-0" />
+                                                    <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('chat')}</span>
+                                                </div>
+                                            </NavLink>
+                                        )}
                                     </li>
+
                                     <li className="nav-item">
-                                        <NavLink to="/apps/mailbox" className="group">
-                                            <div className="flex items-center">
-                                                <IconMenuMailbox className="group-hover:!text-primary shrink-0" />
-                                                <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('mailbox')}</span>
-                                            </div>
-                                        </NavLink>
+                                        {getUserRole() === 'admin' && (
+                                            <NavLink to="/Mailbox" className="group">
+                                                <div className="flex items-center">
+                                                    <IconMenuMailbox className="group-hover:!text-primary shrink-0" />
+                                                    <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('mailbox')}</span>
+                                                </div>
+                                            </NavLink>
+                                        )}
                                     </li>
+
                                     <li className="nav-item">
-                                        <NavLink to="/apps/todolist" className="group">
-                                            <div className="flex items-center">
-                                                <IconMenuTodo className="group-hover:!text-primary shrink-0" />
-                                                <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('todo_list')}</span>
-                                            </div>
-                                        </NavLink>
+                                        {getUserRole() === 'admin' && (
+                                            <NavLink to="/todolist" className="group">
+                                                <div className="flex items-center">
+                                                    <IconMenuTodo className="group-hover:!text-primary shrink-0" />
+                                                    <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('todo_list')}</span>
+                                                </div>
+                                            </NavLink>
+                                        )}
                                     </li>
+
                                     <li className="nav-item">
-                                        <NavLink to="/apps/notes" className="group">
-                                            <div className="flex items-center">
-                                                <IconMenuNotes className="group-hover:!text-primary shrink-0" />
-                                                <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('notes')}</span>
-                                            </div>
-                                        </NavLink>
+                                        {getUserRole() === 'backenduser' && (
+                                            <NavLink to="/notes" className="group">
+                                                <div className="flex items-center">
+                                                    <IconMenuNotes className="group-hover:!text-primary shrink-0" />
+                                                    <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('notes')}</span>
+                                                </div>
+                                            </NavLink>
+                                        )}
                                     </li>
+
                                     <li className="nav-item">
-                                        <NavLink to="/apps/scrumboard" className="group">
-                                            <div className="flex items-center">
-                                                <IconMenuScrumboard className="group-hover:!text-primary shrink-0" />
-                                                <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('scrumboard')}</span>
-                                            </div>
-                                        </NavLink>
+                                        {getUserRole() === 'backenduser' && (
+                                            <NavLink to="/scrumboard" className="group">
+                                                <div className="flex items-center">
+                                                    <IconMenuScrumboard className="group-hover:!text-primary shrink-0" />
+                                                    <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('scrumboard')}</span>
+                                                </div>
+                                            </NavLink>
+                                        )}
                                     </li>
+
                                     <li className="nav-item">
-                                        <NavLink to="/apps/contacts" className="group">
-                                            <div className="flex items-center">
-                                                <IconMenuContacts className="group-hover:!text-primary shrink-0" />
-                                                <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('contacts')}</span>
-                                            </div>
-                                        </NavLink>
+                                        {getUserRole() === 'user' && (
+                                            <NavLink to="/contacts" className="group">
+                                                <div className="flex items-center">
+                                                    <IconMenuContacts className="group-hover:!text-primary shrink-0" />
+                                                    <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('contacts')}</span>
+                                                </div>
+                                            </NavLink>
+                                        )}
                                     </li>
 
                                     <li className="menu nav-item">
@@ -211,12 +238,14 @@ const Sidebar = () => {
                                     </li>
 
                                     <li className="nav-item">
-                                        <NavLink to="/apps/calendar" className="group">
-                                            <div className="flex items-center">
-                                                <IconMenuCalendar className="group-hover:!text-primary shrink-0" />
-                                                <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('calendar')}</span>
-                                            </div>
-                                        </NavLink>
+                                        {getUserRole() === 'user' && (
+                                            <NavLink to="/calendar" className="group">
+                                                <div className="flex items-center">
+                                                    <IconMenuCalendar className="group-hover:!text-primary shrink-0" />
+                                                    <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{t('calendar')}</span>
+                                                </div>
+                                            </NavLink>
+                                        )}
                                     </li>
                                 </ul>
                             </li>
@@ -541,9 +570,8 @@ const Sidebar = () => {
 
                                 <AnimateHeight duration={300} height={currentMenu === 'users' ? 'auto' : 0}>
                                     <ul className="sub-menu text-gray-500">
-                                        <li>
-                                            <NavLink to="/users/profile">{t('profile')}</NavLink>
-                                        </li>
+                                        <li>{getUserRole() === 'admin' && <NavLink to="/userlist">{t('profile')}</NavLink>}</li>
+
                                         <li>
                                             <NavLink to="/users/user-account-settings">{t('account_settings')}</NavLink>
                                         </li>

@@ -4,15 +4,63 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const User = require('../Models/User');
 const { SendVerificationcode } = require('../middleware/Email');
+const { verifyToken, authorizeRoles } = require('../middleware/authorizeRole');
 
 dotenv.config(); // Load environment variables from .env file
 const router = express.Router();
+
+router.get('/', verifyToken, authorizeRoles('admin', 'backenduser'), async (req, res) => {
+    const users = await User.find();
+    res.json(users);
+});
+
+// Create user (Admin)
+router.post('/', verifyToken, authorizeRoles('admin'), async (req, res) => {
+    const newUser = new User(req.body);
+    await newUser.save();
+    res.status(201).json(newUser);
+});
+
+// Update user (Admin)
+router.put('/:id', verifyToken, authorizeRoles('admin'), async (req, res) => {
+    const updated = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+});
+
+// Delete user (Admin)
+router.delete('/:id', verifyToken, authorizeRoles('admin'), async (req, res) => {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: 'User deleted' });
+});
+
+router.get('/allusers', verifyToken, authorizeRoles('admin'), async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1; // Current page
+        const limit = parseInt(req.query.limit) || 5; // Users per page
+        const skip = (page - 1) * limit; // How many to skip
+
+        const users = await User.find({}, 'name email role').skip(skip).limit(limit);
+
+        const totalUsers = await User.countDocuments();
+        const totalPages = Math.ceil(totalUsers / limit);
+
+        res.json({
+            users,
+            totalUsers,
+            totalPages,
+            currentPage: page,
+        });
+    } catch (error) {
+        console.error('Pagination error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
 // =============================
 //          SIGN UP
 // =============================
 router.post('/signup', async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     try {
         // 1. Validate input
@@ -64,6 +112,8 @@ router.post('/signup', async (req, res) => {
             password: hashedPassword,
             verificationCode,
             emailVerified: false,
+            isAdmin: false,
+            role: role || 'user', //default role
         });
 
         // 7. Save user in DB
@@ -73,7 +123,7 @@ router.post('/signup', async (req, res) => {
         SendVerificationcode(email, verificationCode);
 
         // 9. Generate JWT token
-        const token = jwt.sign({ id: user._id, email: user.email, name: user.name }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user._id, email: user.email, name: user.name, role: user.role }, process.env.JWT_SECRET, { expiresIn: '60s' });
 
         // 10. Send response
         res.status(201).json({
@@ -104,10 +154,16 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-        // 4. Generate JWT token
-        const token = jwt.sign({ id: user._id, email: user.email, name: user.name }, process.env.JWT_SECRET, { expiresIn: '60s' });
+        // 4. Assign role based on email
+        let role = user.role;
+        if (email === 'yashchodhari4301@gmail.com') {
+            role = 'admin';
+        }
+
+        // 5. Generate JWT token with assigned role
+        const token = jwt.sign({ id: user._id, email: user.email, name: user.name, role: role }, process.env.JWT_SECRET, { expiresIn: '1h' });
         console.log('Generated token:', token); // Debugging line
-        // 5. Send response
+        // 6. Send response
         res.json({ token, userId: user._id });
     } catch (error) {
         console.error(error);
@@ -168,6 +224,7 @@ router.post('/verify', async (req, res) => {
 // =============================
 //      VALIDATE TOKEN
 // =============================
+
 router.get('/validate', async (req, res) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -184,6 +241,11 @@ router.get('/validate', async (req, res) => {
         const user = await User.findById(decoded.id);
         if (!user) {
             return res.status(401).json({ valid: false, message: 'User not found' });
+        }
+
+        // Check if email is verified
+        if (!user.emailVerified) {
+            return res.status(401).json({ valid: false, message: 'Email not verified' });
         }
 
         return res.json({ valid: true });

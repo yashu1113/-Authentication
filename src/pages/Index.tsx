@@ -1,5 +1,6 @@
 import React from 'react';
 import Analytics from '../../Analytics';
+
 import { jwtDecode } from 'jwt-decode';
 
 interface User {
