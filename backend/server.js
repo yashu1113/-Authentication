@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
 dotenv.config({ path: './.env' });
 
@@ -17,6 +18,9 @@ for (const envVar of requiredEnvVars) {
 const app = express();
 app.use(express.json()); // Middleware to parse JSON request bodies
 
+// Serve uploads folder statically
+// app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
 // Configure CORS with frontend origin
 app.use(
     cors({
@@ -26,6 +30,9 @@ app.use(
         credentials: true,
     })
 );
+
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Log the MongoDB URI specifically
 console.log('MongoDB URI:', process.env.MONGO_URI);

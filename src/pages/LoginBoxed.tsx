@@ -95,6 +95,21 @@ const LoginBoxed = () => {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('userId', data.userId);
 
+                // Fetch current user data after login
+                try {
+                    const userResponse = await fetch('/api/auth/current-user', {
+                        headers: {
+                            Authorization: `Bearer ${data.token}`,
+                        },
+                    });
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        localStorage.setItem('userData', JSON.stringify(userData));
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch current user data after login:', err);
+                }
+
                 // Redirect to dashboard
                 window.location.href = '/index';
             } else {

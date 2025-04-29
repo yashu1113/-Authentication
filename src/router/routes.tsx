@@ -13,6 +13,7 @@ import calendar from '../../calendar';
 import { Calendar } from 'fullcalendar';
 import FullCalendar from '@fullcalendar/react';
 import UserList from '../../Userlist';
+import UserProfile from '../../UserProfile';
 
 const Index = lazy(() => import('../pages/Index'));
 
@@ -38,7 +39,7 @@ const routes = [
     },
 
     {
-        path: '/Chat',
+        path: '/chat',
         element: (
             <ProtectedRoute allowedRoles={['admin']}>
                 <Chat />
@@ -94,6 +95,28 @@ const routes = [
     {
         path: '/userlist',
         element: <UserList />,
+        layout: 'default',
+    },
+
+    {
+        path: '/userprofile',
+        element: (
+            <ProtectedRoute>
+                <UserProfile />
+            </ProtectedRoute>
+        ),
+        layout: 'default',
+    },
+    {
+        path: '*',
+        element: (
+            <ProtectedRoute>
+                <div style={{ padding: '2rem', textAlign: 'center' }}>
+                    <h1>404 - Page Not Found</h1>
+                    <p>The page you are looking for does not exist.</p>
+                </div>
+            </ProtectedRoute>
+        ),
         layout: 'default',
     },
 ];

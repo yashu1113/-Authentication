@@ -5,39 +5,67 @@ const dotenv = require('dotenv');
 const User = require('../Models/User');
 const { SendVerificationcode } = require('../middleware/Email');
 const { verifyToken, authorizeRoles } = require('../middleware/authorizeRole');
+const upload = require('../middleware/upload'); // import upload middleware
+const { uploadProfileImage } = require('../Controller/userController');
 
-dotenv.config(); // Load environment variables from .env file
+dotenv.config(); // Load environment variables
 const router = express.Router();
 
-router.get('/', verifyToken, authorizeRoles('admin', 'backenduser'), async (req, res) => {
+// Get all users (admin, backenduser, user)
+router.get('/', verifyToken, authorizeRoles('admin', 'backenduser', 'user'), async (req, res) => {
     const users = await User.find();
     res.json(users);
 });
 
-// Create user (Admin)
+// Upload profile image
+router.post('/upload-profile-image', verifyToken, authorizeRoles('user', 'admin', 'backenduser'), upload.single('profileImage'), uploadProfileImage);
+
+// Get current user profile (name, email, profileImage)
+router.get('/current-user', verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Directly return what is in DB (no fs check needed)
+        res.json({
+            name: user.name,
+            email: user.email,
+            profileImage: user.profileImage || '',
+        });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Create new user (admin only)
 router.post('/', verifyToken, authorizeRoles('admin'), async (req, res) => {
     const newUser = new User(req.body);
     await newUser.save();
     res.status(201).json(newUser);
 });
 
-// Update user (Admin)
-router.put('/:id', verifyToken, authorizeRoles('admin'), async (req, res) => {
+router.put('/:id', verifyToken, async (req, res) => {
+    // Only verifyToken middleware to ensure user is logged in and token is valid
     const updated = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
 });
 
-// Delete user (Admin)
+// Delete a user (admin only)
 router.delete('/:id', verifyToken, authorizeRoles('admin'), async (req, res) => {
     await User.findByIdAndDelete(req.params.id);
     res.json({ message: 'User deleted' });
 });
 
+// Get paginated list of users (admin only)
 router.get('/allusers', verifyToken, authorizeRoles('admin'), async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1; // Current page
-        const limit = parseInt(req.query.limit) || 5; // Users per page
-        const skip = (page - 1) * limit; // How many to skip
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5;
+        const skip = (page - 1) * limit;
 
         const users = await User.find({}, 'name email role').skip(skip).limit(limit);
 
@@ -114,6 +142,7 @@ router.post('/signup', async (req, res) => {
             emailVerified: false,
             isAdmin: false,
             role: role || 'user', //default role
+            profileImage: '',
         });
 
         // 7. Save user in DB

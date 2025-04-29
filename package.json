@@ -26,6 +26,7 @@
         "@types/react-dom": "^18.0.6",
         "fullcalendar": "^6.1.17",
         "jwt-decode": "^4.0.0",
+        "multer": "^1.4.5-lts.2",
         "nodemon": "^3.1.9",
         "react": "^18.3.1",
         "react-apexcharts": "^1.7.0",
